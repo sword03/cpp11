@@ -2,6 +2,8 @@
 #include <utility> // pair 依赖
 #include <cstring> 
 #include <functional> 
+#include <complex> 
+
 
 /**
 * @brief: 输出pair
@@ -171,7 +173,107 @@ void test_pair()
     // 如果遇到类型转换，需要复制构造函数
 }
 
+// helper: print element with index IDX of tuple with MAX elements
+template <int IDX, int MAX, typename... Args>
+struct PRINT_TUPLE{
+    static void print( std::ostream& ostrm, const std::tuple<Args...>& t){
+        ostrm << std::get<IDX>(t) << (IDX+1==MAX ? "" : ",");
+        PRINT_TUPLE<IDX+1, MAX, Args...>::print(ostrm, t);
+    }
+};
+
+// helper: partial specialization to end the recursion
+template <int MAX, typename... Args>
+struct PRINT_TUPLE<MAX, MAX, Args...>{
+    static void print( std::ostream& ostrm, const std::tuple<Args...>& t){
+    }
+};
+
+// output operation for tuples
+template <typename... Args>
+std::ostream& operator << (std::ostream& ostrm, const std::tuple<Args...>& t)
+{
+    ostrm << "[";
+    PRINT_TUPLE<0, sizeof...(Args), Args...>::print(ostrm, t);
+    return ostrm << "]";
+}
+
+void test_tuple(){
+    // tuple 许多用法跟 pair类似，而且在元素个数为2时，可以相互转换。
+    // tuple 输出流需要自己重载，标准库中不支持
+    
+    //std::tuple<T1, T2,...,Tn> t;
+    std::tuple<std::string, int, int, std::complex<double>> t0;
+    std::cout<< t0 <<std::endl;//tuple打印
+
+    //std::tuple<T1, T2,...,Tn> t(v1, v2,..., vn);
+    std::tuple<std::string, int, int, std::complex<double>> t1("t1", 1, 10, std::complex<double>(10, 10));
+    std::cout<< t1 <<std::endl;
+    typedef std::tuple<std::string, int, int, std::complex<double>> Tuple4;
+    // 下面这种用法，打印tuple部分元素。此处试验元编程。
+    std::cout<< "std::tuple_size<Tuple4>::value: " << std::tuple_size<Tuple4>::value <<std::endl;
+    PRINT_TUPLE<0, std::tuple_size<Tuple4>::value, std::string, int, int, std::complex<double>>::print(std::cout, t1);
+    std::cout<<std::endl;
+    PRINT_TUPLE<2, std::tuple_size<Tuple4>::value, std::string, int, int, std::complex<double>>::print(std::cout, t1);
+    std::cout<<std::endl;
+    PRINT_TUPLE<1, 3, std::string, int, int, std::complex<double>>::print(std::cout, t1);
+    std::cout<<std::endl;
+
+    //std::tuple<T1, T2> t(p); 使用std::pair对std::tuple赋值
+    std::tuple<int, int> tp( std::pair<int, int>(2, 2) );
+    std::cout<< tp <<std::endl;
+
+    // std::tie
+    std::tuple<int, float, std::string> t5(77, 1.1, "more light");
+    int i;
+    std::string s;
+    std::tie(i, std::ignore, s) = t5;
+    std::cout<< "tie:" << i << "," << s <<std::endl;
+
+    // get<0>(t), 可读可写
+    std::get<0>(t5) = 66;
+    std::cout<< t5 <<std::endl;
+
+    // tuple 比较，需要每个元素都支持比较或者实现了比较运算符的函数
+
+    // 引用
+    s = "old";
+    auto x = std::make_tuple(s);
+    std::get<0>(x) = "my value";
+    std::cout<< "s = " << s <<std::endl;
+
+    auto y = std::make_tuple(ref(s));
+    std::get<0>(y) = "my value";
+    std::cout<< "s = " << s <<std::endl;
+
+    // std::pair 和 std::tuple 还有一个区别是tuple没有实现Initiallizer List转tuple的构造函数，所以出现下面情况
+    std::pair<int, int> tp6 = {1, 2}; // OK
+    std::cout<< tp6;
+    //std::tuple<int,int> t6 = {1, 2}; // Error
+    //std::tuple<int,int> t7 = {1, 2, 3 }; //Error
+
+
+    //一些需要注意的地方，语法糖
+    //std::vector<std::tuple<int, float>> v{ {1, 1.0}, {2, 2.0} }; //Error
+    //std::tuple<int, int, int> foo(){
+        //return { 1, 2, 3 };  //Error
+    //}   
+    //std::vector<std::tuple<int, float>> v{ std::make_tuple{1, 1.0}, std::make_tuple{2, 2.0} }; //OK
+    //std::tuple<int, int, int> foo(){
+        //return std::make_tuple{ 1, 2, 3 };  //OK
+    //}   
+
+    //std::vector<std::pair<int, float>> v{ {1, 1.0}, {2, 2.0} }; //OK
+    //std::vector<std::vector<float, float>> v{ {1, 1.0}, {2, 2.0} }; //OK
+    
+    //std::vector<int> foo2(){
+       //return {1, 2, 3 }; // OK 
+    //}
+}
+
+
 int main(){
     test_pair();       
+    test_tuple();
     return 0;
 }
