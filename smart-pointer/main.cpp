@@ -7,7 +7,6 @@
 void a_example(){
     std::shared_ptr<std::string> pNico(new std::string("nico"));
     std::shared_ptr<std::string> pJutta(new std::string("jutta"));
-
     (*pNico)[0] = 'N';
     pJutta->replace(0, 1, "JJ");
 

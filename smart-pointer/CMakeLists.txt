@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.5)
+PROJECT(main) 
+SET(SRC_LIST main.cpp) 
+SET(CMAKE_CXX_COMPILER "g++") 
+SET(CMAKE_CXX_FLAGS "-std=c++11 -O3") 
+SET(CMAKE_BUILD_TYPE Release) 
+ADD_EXECUTABLE(main ${SRC_LIST})
+INSTALL(PROGRAMS main DESTINATION /usr/bin/)
